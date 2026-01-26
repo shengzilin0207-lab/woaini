@@ -1,134 +1,458 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
+    <title>思绪生长循环：爱心 ↔ 柏</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>粒子爱心效果</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            margin: 0;
-            padding: 0;
-            font-family: 'Poppins', sans-serif;
-            height: 100vh;
             background: #000;
-        }
-        .banner {
-            width: 100%;
-            height: 100vh;
+            color: #b0e0ff;
+            font-family: 'Segoe UI', sans-serif;
             overflow: hidden;
+            height: 100vh;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
-            position: relative;
+            justify-content: center;
         }
-        .banner video {
-            position: absolute;
+        #container {
+            width: 100vw;
+            height: 100vh;
+            position: fixed;
             top: 0;
             left: 0;
-            object-fit: cover;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            opacity: 0;
-        }
-        .banner .content {
-            position: relative;
             z-index: 1;
-            max-width: 1000px;
-            margin: 0 auto;
-            text-align: center;
         }
-        /* 粒子爱心容器 */
-        #heartCanvas {
+        #infoPanel {
             position: absolute;
-            top: 0;
-            left: 0;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            background: rgba(0, 30, 60, 0.85);
+            padding: 20px 30px;
+            border-radius: 16px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(100, 180, 255, 0.3);
+            max-width: 90%;
+            box-shadow: 0 8px 32px rgba(0, 80, 120, 0.4);
+        }
+        #title {
+            font-size: 2.2em;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #ffffff, #80d0ff, #ffa0f0);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: 2px;
+        }
+        #phaseDisplay {
+            font-size: 1.3em;
+            margin: 12px 0;
+            min-height: 1.5em;
+        }
+        .phase-desc {
+            color: #7fffd4;
+            font-weight: bold;
+            text-shadow: 0 0 8px currentColor;
+        }
+        .slider-container {
+            margin-top: 15px;
             width: 100%;
-            height: 100%;
-            z-index: 0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .slider-label {
+            min-width: 120px;
+            text-align: right;
+            font-size: 0.95em;
+            color: #a0dfff;
+        }
+        input[type="range"] {
+            flex-grow: 1;
+            height: 6px;
+            -webkit-appearance: none;
+            background: linear-gradient(90deg, #004466, #0088cc);
+            border-radius: 3px;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #00ccff;
+            cursor: pointer;
+            box-shadow: 0 0 10px #00ccff;
+        }
+        #controls {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            display: flex;
+            gap: 20px;
+        }
+        .control-btn {
+            padding: 12px 24px;
+            background: rgba(0, 60, 120, 0.8);
+            color: #b0f0ff;
+            border: 1px solid #00aaff;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s;
+            backdrop-filter: blur(5px);
+        }
+        .control-btn:hover {
+            background: rgba(0, 100, 200, 0.9);
+            box-shadow: 0 0 15px #00aaff;
+            transform: translateY(-2px);
+        }
+        #hint {
+            position: absolute;
+            bottom: 10px;
+            width: 100%;
+            text-align: center;
+            color: #88aacc;
+            font-size: 0.9em;
         }
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
 </head>
 <body>
-    <div class="banner">
-        <canvas id="heartCanvas"></canvas>
-        <div class="content">
-            <h1>小木白</h1>
+    <div id="container"></div>
+    
+    <div id="infoPanel">
+        <div id="title">思绪生长循环：爱心 ↔ 柏</div>
+        <div id="phaseDisplay">当前阶段: <span class="phase-desc">线条聚合中</span></div>
+        <p>线条会持续进行不规则的“思绪”运动，即使在淡出或变换时也不例外。</p>
+        
+        <div class="slider-container">
+            <div class="slider-label">动画速度:</div>
+            <input type="range" id="speedSlider" min="0.2" max="3.0" step="0.1" value="1.0">
+        </div>
+        <div class="slider-container">
+            <div class="slider-label">线条亮度:</div>
+            <input type="range" id="opacitySlider" min="0.1" max="1.0" step="0.05" value="0.85">
         </div>
     </div>
+    
+    <div id="controls">
+        <button class="control-btn" onclick="pauseResume()">暂停/继续</button>
+        <button class="control-btn" onclick="restartAnimation()">重新开始</button>
+        <button class="control-btn" onclick="toggleAutoRotate()">切换镜头旋转</button>
+    </div>
+    
+    <div id="hint">提示: 可用鼠标拖拽旋转视角，滚轮缩放 | 爱心 → 淡出缩小 → 显示"柏"字 → 缩小 → 爱心...</div>
 
     <script>
-        const canvas = document.getElementById('heartCanvas');
-        const ctx = canvas.getContext('2d');
-
-        // 画布尺寸自适应
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-        resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
-
-        // 粒子类
-        class Particle {
-            constructor() {
-                this.reset();
-                this.color = `hsl(${Math.random() * 20 + 180}, 100%, 70%)`; // 蓝青色系
-                this.size = Math.random() * 3 + 1;
-                this.speed = Math.random() * 0.5 + 0.2;
-            }
-
-            reset() {
-                const angle = Math.random() * Math.PI * 2;
-                const radius = Math.random() * 150 + 100;
-                const heartX = 16 * Math.sin(angle) ** 3;
-                const heartY = 13 * Math.cos(angle) - 5 * Math.cos(2 * angle) - 2 * Math.cos(3 * angle) - Math.cos(4 * angle);
-                this.x = canvas.width / 2 + heartX * 5;
-                this.y = canvas.height / 2 + heartY * 5;
-            }
-
-            update() {
-                const angle = Math.random() * Math.PI * 2;
-                const radius = Math.random() * 150 + 100;
-                const heartX = 16 * Math.sin(angle) ** 3;
-                const heartY = 13 * Math.cos(angle) - 5 * Math.cos(2 * angle) - 2 * Math.cos(3 * angle) - Math.cos(4 * angle);
-                this.x = canvas.width / 2 + heartX * 5 + (Math.random() - 0.5) * 10;
-                this.y = canvas.height / 2 + heartY * 5 + (Math.random() - 0.5) * 10;
-                if (Math.random() > 0.95) {
-                    this.reset();
+        // ========== 1. 初始化Three.js场景 ==========
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.Fog(0x000011, 20, 60);
+        const container = document.getElementById('container');
+        const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ 
+            antialias: true, 
+            alpha: true,
+            powerPreference: "high-performance"
+        });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+        
+        // 轨道控制器（鼠标交互）
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        camera.position.set(0, 0, 18);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.autoRotate = false;
+        controls.autoRotateSpeed = 0.8;
+        
+        // ========== 2. 核心参数配置 ==========
+        const CONFIG = {
+            totalLines: 220,
+            lineWidth: 2.6,
+            baseSpeed: 0.005,
+            noiseScale: 0.25,
+            heartScale: 2.6,
+            charScale: 2.4,
+            cycleDuration: 360, // 完整循环总帧数
+            currentFrame: 0,
+            isPlaying: true,
+            globalSpeed: 1.0,
+            globalOpacity: 0.85,
+            autoRotate: false
+        };
+        
+        // ========== 3. 动画阶段定义 ==========
+        const PHASES = [
+            { name: "爱心显现", start: 0, end: 90, desc: "线条聚合形成爱心" },
+            { name: "爱心淡出", start: 90, end: 150, desc: "爱心淡出并缩小" },
+            { name: "柏字显现", start: 150, end: 210, desc: "放大显示'柏'字" },
+            { name: "柏字淡出", start: 210, end: 270, desc: "'柏'字淡出缩小" },
+            { name: "爱心重生", start: 270, end: 360, desc: "重新聚合成爱心" }
+        ];
+        
+        // ========== 4. 创建渐变材质 ==========
+        const createGradientMaterial = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 1;
+            const ctx = canvas.getContext('2d');
+            const gradient = ctx.createLinearGradient(0, 0, 512, 0);
+            gradient.addColorStop(0.0, '#ffffff');
+            gradient.addColorStop(0.3, '#c2e9ff');
+            gradient.addColorStop(0.6, '#87cefa');
+            gradient.addColorStop(1.0, '#5ca8e0');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 512, 1);
+            const texture = new THREE.CanvasTexture(canvas);
+            return new THREE.LineBasicMaterial({ 
+                map: texture,
+                transparent: true,
+                opacity: CONFIG.globalOpacity,
+                linewidth: CONFIG.lineWidth
+            });
+        };
+        const lineMaterial = createGradientMaterial();
+        
+        // ========== 5. 形状函数定义 ==========
+        // 爱心形状函数
+        const getHeartPoint = (t, scale, phase = 0) => {
+            t = t * Math.PI * 2;
+            const heartX = 16 * Math.pow(Math.sin(t), 3);
+            const heartY = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
+            const baseScale = scale * 0.045;
+            // 添加持续的细微抖动，模拟思绪运动
+            const jitter = CONFIG.noiseScale * 0.5;
+            const noiseX = Math.sin(t * 3 + phase * 2) * jitter;
+            const noiseY = Math.cos(t * 2.5 + phase * 1.7) * jitter;
+            const noiseZ = Math.sin(t * 4 + phase * 3) * jitter * 0.3;
+            return new THREE.Vector3(
+                heartX * baseScale + noiseX,
+                -heartY * baseScale + noiseY,
+                noiseZ
+            );
+        };
+        
+        // "柏"字形状函数（简化笔画）
+        const getCharacterPoint = (t, scale, phase = 0) => {
+            // "柏"字的笔画路径参数化
+            const strokes = [
+                // 左侧"木"字旁
+                {t0:0.00, t1:0.08, x:-12, y:-15, dx:1, dy:0},   // 横
+                {t0:0.08, t1:0.20, x:-7, y:-15, dx:0, dy:1},    // 竖
+                {t0:0.20, t1:0.28, x:-12, y:-2, dx:1, dy:0},    // 撇点
+                {t0:0.28, t1:0.36, x:-2, y:-2, dx:1, dy:0},     // 捺点
+                // 右侧"白"字部分
+                {t0:0.36, t1:0.48, x:5, y:-15, dx:0, dy:1},     // 左竖
+                {t0:0.48, t1:0.56, x:5, y:-15, dx:1, dy:0},     // 上横
+                {t0:0.56, t1:0.64, x:17, y:-15, dx:0, dy:1},    // 右竖
+                {t0:0.64, t1:0.72, x:5, y:-3, dx:1, dy:0},      // 下横
+                {t0:0.72, t1:0.82, x:7, y:-8, dx:1, dy:0}       // 中横
+            ];
+            
+            let targetX = 0, targetY = 0;
+            for (const stroke of strokes) {
+                if (t >= stroke.t0 && t <= stroke.t1) {
+                    const strokeT = (t - stroke.t0) / (stroke.t1 - stroke.t0);
+                    targetX = stroke.x + stroke.dx * strokeT * 12;
+                    targetY = stroke.y + stroke.dy * strokeT * 13;
+                    break;
                 }
             }
-
-            draw() {
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fillStyle = this.color;
-                ctx.fill();
+            
+            const baseScale = scale * 0.032;
+          // 同样添加思绪抖动
+            const jitter = CONFIG.noiseScale * 0.6;
+            const noiseX = Math.sin(t * 5 + phase * 1.5) * jitter;
+            const noiseY = Math.cos(t * 4.5 + phase * 2.1) * jitter;
+            const noiseZ = Math.sin(t * 3.7 + phase * 1.9) * jitter * 0.4;
+            
+            return new THREE.Vector3(
+                targetX * baseScale + noiseX,
+                targetY * baseScale + noiseY,
+                noiseZ
+            );
+        };
+        
+        // ========== 6. 线条系统初始化 ==========
+        const lines = [];
+        for (let i = 0; i < CONFIG.totalLines; i++) {
+            const points = [];
+            for (let j = 0; j < 20; j++) {
+                points.push(new THREE.Vector3(0, 0, 0));
             }
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            const line = new THREE.Line(geometry, lineMaterial);
+            
+            line.userData = {
+                seed: Math.random() * 1000,
+                speed: 0.003 + Math.random() * 0.01,
+                noiseScale: 0.1 + Math.random() * 0.3,
+                offset: Math.random() * Math.PI * 2,
+                currentT: i / CONFIG.totalLines
+            };
+            
+            scene.add(line);
+            lines.push({ points, line, geometry });
         }
-
-        // 生成粒子
-        const particles = [];
-        const particleCount = 500;
-        for (let i = 0; i < particleCount; i++) {
-            particles.push(new Particle());
-        }
-
-        // 动画循环
-        function animate() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            particles.forEach(particle => {
-                particle.update();
-                particle.draw();
+        
+        // ========== 7. 动画更新核心逻辑 ==========
+        const updatePhaseDisplay = () => {
+            const phaseDisplay = document.getElementById('phaseDisplay');
+            for (const phase of PHASES) {
+                if (CONFIG.currentFrame >= phase.start && CONFIG.currentFrame < phase.end) {
+                    const progress = (CONFIG.currentFrame - phase.start) / (phase.end - phase.start);
+                    phaseDisplay.innerHTML = `当前阶段: <span class="phase-desc">${phase.name}</span> (${Math.round(progress*100)}%)`;
+                    break;
+                }
+            }
+        };
+        
+        const updateLines = () => {
+            if (!CONFIG.isPlaying) return;
+            
+            CONFIG.currentFrame += CONFIG.globalSpeed;
+            if (CONFIG.currentFrame >= CONFIG.cycleDuration) {
+                CONFIG.currentFrame = 0;
+            }
+            
+            updatePhaseDisplay();
+            
+            // 计算当前阶段和进度
+            let currentPhase = PHASES[0];
+            let phaseProgress = 0;
+            for (const phase of PHASES) {
+                if (CONFIG.currentFrame >= phase.start && CONFIG.currentFrame < phase.end) {
+                    currentPhase = phase;
+                    phaseProgress = (CONFIG.currentFrame - phase.start) / (phase.end - phase.start);
+                    break;
+                }
+            }
+            
+            // 更新每条线
+            lines.forEach((lineObj, idx) => {
+                const { points, line, geometry } = lineObj;
+                const attrs = line.userData;
+                
+                // 计算当前目标形状和缩放
+                let targetPos = new THREE.Vector3();
+                let scale = 1.0;
+                let opacity = CONFIG.globalOpacity;
+                
+                switch(PHASES.indexOf(currentPhase)) {
+                    case 0: // 爱心显现
+                        targetPos = getHeartPoint(attrs.currentT, CONFIG.heartScale, CONFIG.currentFrame * 0.01);
+                        scale = phaseProgress;
+                        break;
+                    case 1: // 爱心淡出
+                        targetPos = getHeartPoint(attrs.currentT, CONFIG.heartScale, CONFIG.currentFrame * 0.01);
+                        scale = 1.0 - phaseProgress * 0.7;
+                        opacity = CONFIG.globalOpacity * (1.0 - phaseProgress);
+                        break;
+                    case 2: // 柏字显现
+                        targetPos = getCharacterPoint(attrs.currentT, CONFIG.charScale, CONFIG.currentFrame * 0.01);
+                        scale = phaseProgress * 0.5 + 0.5;
+                        opacity = CONFIG.globalOpacity * (0.3 + phaseProgress * 0.7);
+                        break;
+                    case 3: // 柏字淡出
+                        targetPos = getCharacterPoint(attrs.currentT, CONFIG.charScale, CONFIG.currentFrame * 0.01);
+                        scale = 1.0 - phaseProgress * 0.7;
+                        opacity = CONFIG.globalOpacity * (1.0 - phaseProgress);
+                        break;
+                    case 4: // 爱心重生
+                        targetPos = getHeartPoint(attrs.currentT, CONFIG.heartScale, CONFIG.currentFrame * 0.01);
+                        scale = phaseProgress;
+                        opacity = CONFIG.globalOpacity * (0.3 + phaseProgress * 0.7);
+                        break;
+                }
+                
+                // 应用缩放和思绪运动
+                const time = CONFIG.currentFrame * attrs.speed + attrs.offset;
+                const noiseX = Math.sin(time * 2 + attrs.seed) * attrs.noiseScale;
+                const noiseY = Math.cos(time * 1.7 + attrs.seed * 1.3) * attrs.noiseScale;
+                const noiseZ = Math.sin(time * 2.3 + attrs.seed * 0.7) * attrs.noiseScale * 0.5;
+                
+                targetPos.x = targetPos.x * scale + noiseX;
+                targetPos.y = targetPos.y * scale + noiseY;
+                targetPos.z = targetPos.z * scale + noiseZ;
+                
+                // 更新线条拖尾
+                for (let j = points.length - 1; j > 0; j--) {
+                    points[j].copy(points[j-1]);
+                }
+                points[0].copy(targetPos);
+                
+                // 更新几何体和材质
+                geometry.setFromPoints(points);
+                geometry.attributes.position.needsUpdate = true;
+                line.material.opacity = opacity;
             });
+            
+            // 更新自动旋转
+            if (CONFIG.autoRotate) {
+                camera.position.x = Math.sin(CONFIG.currentFrame * 0.005) * 18;
+                camera.position.z = Math.cos(CONFIG.currentFrame * 0.005) * 18;
+                camera.lookAt(0, 0, 0);
+            }
+        };
+        
+        // ========== 8. 控制函数 ==========
+        window.pauseResume = () => {
+            CONFIG.isPlaying = !CONFIG.isPlaying;
+        };
+        
+        window.restartAnimation = () => {
+            CONFIG.currentFrame = 0;
+            CONFIG.isPlaying = true;
+        };
+        
+        window.toggleAutoRotate = () => {
+            CONFIG.autoRotate = !CONFIG.autoRotate;
+            controls.autoRotate = CONFIG.autoRotate;
+            document.querySelector('.control-btn:nth-child(3)').textContent = 
+                CONFIG.autoRotate ? '停止旋转' : '切换镜头旋转';
+        };
+        
+        // ========== 9. 滑块事件监听 ==========
+        document.getElementById('speedSlider').addEventListener('input', (e) => {
+            CONFIG.globalSpeed = parseFloat(e.target.value);
+            document.querySelector('.slider-container:nth-child(3) .slider-label').innerHTML = 
+                `动画速度: ${CONFIG.globalSpeed.toFixed(1)}x`;
+        });
+        
+        document.getElementById('opacitySlider').addEventListener('input', (e) => {
+            CONFIG.globalOpacity = parseFloat(e.target.value);
+            lineMaterial.opacity = CONFIG.globalOpacity;
+            document.querySelector('.slider-container:nth-child(4) .slider-label').innerHTML = 
+                `线条亮度: ${Math.round(CONFIG.globalOpacity * 100)}%`;
+        });
+        
+        // ========== 10. 渲染循环 ==========
+        const animate = () => {
             requestAnimationFrame(animate);
-        }
+            updateLines();
+            controls.update();
+            renderer.render(scene, camera);
+        };
+        
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+        
+        // ========== 启动 ==========
         animate();
+        updatePhaseDisplay();
     </script>
 </body>
 </html>
