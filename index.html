@@ -2,457 +2,222 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>思绪生长循环：爱心 ↔ 柏</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>蓝色爱心动画-小木白</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            background: #000;
-            color: #b0e0ff;
-            font-family: 'Segoe UI', sans-serif;
-            overflow: hidden;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        #container {
+        body {
             width: 100vw;
             height: 100vh;
+            background: #000;
+            overflow: hidden;
+            position: relative;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+        /* 居中文字：小木白 置顶层级 */
+        #text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 36px;
+            color: #0000ff;
+            z-index: 999;
+            pointer-events: none;
+        }
+        /* 核心：中心爱心轮廓粒子（小圆点） */
+        .particle {
+            position: absolute;
+            background: #0000ff;
+            border-radius: 50%;
+            opacity: 1;
+            pointer-events: none;
+            z-index: 99;
+        }
+        /* 鼠标触发的飘心粒子 */
+        .heart {
+            position: absolute;
+            color: #0000ff;
+            font-size: 20px;
+            pointer-events: none;
+            z-index: 98;
+        }
+        /* 流星容器 + 右上→左下流星样式 */
+        .meteor-container {
             position: fixed;
             top: 0;
             left: 0;
-            z-index: 1;
-        }
-        #infoPanel {
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 100;
-            background: rgba(0, 30, 60, 0.85);
-            padding: 20px 30px;
-            border-radius: 16px;
-            text-align: center;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(100, 180, 255, 0.3);
-            max-width: 90%;
-            box-shadow: 0 8px 32px rgba(0, 80, 120, 0.4);
-        }
-        #title {
-            font-size: 2.2em;
-            margin-bottom: 10px;
-            background: linear-gradient(90deg, #ffffff, #80d0ff, #ffa0f0);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            letter-spacing: 2px;
-        }
-        #phaseDisplay {
-            font-size: 1.3em;
-            margin: 12px 0;
-            min-height: 1.5em;
-        }
-        .phase-desc {
-            color: #7fffd4;
-            font-weight: bold;
-            text-shadow: 0 0 8px currentColor;
-        }
-        .slider-container {
-            margin-top: 15px;
             width: 100%;
-            display: flex;
-            align-items: center;
-            gap: 15px;
+            height: 100%;
+            z-index: 97;
+            pointer-events: none;
         }
-        .slider-label {
-            min-width: 120px;
-            text-align: right;
-            font-size: 0.95em;
-            color: #a0dfff;
-        }
-        input[type="range"] {
-            flex-grow: 1;
-            height: 6px;
-            -webkit-appearance: none;
-            background: linear-gradient(90deg, #004466, #0088cc);
-            border-radius: 3px;
-            outline: none;
-        }
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 20px;
-            height: 20px;
+        .meteor {
+            position: absolute;
+            width: 120px;
+            height: 2px;
+            background: linear-gradient(90deg, #fff, transparent);
             border-radius: 50%;
-            background: #00ccff;
-            cursor: pointer;
-            box-shadow: 0 0 10px #00ccff;
+            transform: rotate(135deg);
+            opacity: 0;
+            animation: meteor 4s linear infinite;
         }
-        #controls {
+        /* 雪花飘屏粒子 */
+        .snow {
             position: absolute;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 100;
-            display: flex;
-            gap: 20px;
+            color: #fff;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 96;
         }
-        .control-btn {
-            padding: 12px 24px;
-            background: rgba(0, 60, 120, 0.8);
-            color: #b0f0ff;
-            border: 1px solid #00aaff;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 1em;
-            transition: all 0.3s;
-            backdrop-filter: blur(5px);
+        /* 动画关键帧 */
+        @keyframes meteor {
+            0% {top: -10%; right: -10%; opacity: 1;}
+            100% {top: 110%; right: 110%; opacity: 0;}
         }
-        .control-btn:hover {
-            background: rgba(0, 100, 200, 0.9);
-            box-shadow: 0 0 15px #00aaff;
-            transform: translateY(-2px);
+        @keyframes heartFall {
+            0% {opacity: 1; transform: translate(0, 0) scale(1);}
+            100% {opacity: 0; transform: translate(60px, 100vh) scale(0.6);}
         }
-        #hint {
-            position: absolute;
-            bottom: 10px;
-            width: 100%;
-            text-align: center;
-            color: #88aacc;
-            font-size: 0.9em;
+        @keyframes snowFall {
+            0% {opacity: 0; transform: translate(0, 0) rotate(0deg);}
+            10% {opacity: 1;}
+            90% {opacity: 1;}
+            100% {opacity: 0; transform: translate(-30px, 100vh) rotate(360deg);}
         }
     </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
 </head>
 <body>
-    <div id="container"></div>
-    
-    <div id="infoPanel">
-        <div id="title">思绪生长循环：爱心 ↔ 柏</div>
-        <div id="phaseDisplay">当前阶段: <span class="phase-desc">线条聚合中</span></div>
-        <p>线条会持续进行不规则的“思绪”运动，即使在淡出或变换时也不例外。</p>
-        
-        <div class="slider-container">
-            <div class="slider-label">动画速度:</div>
-            <input type="range" id="speedSlider" min="0.2" max="3.0" step="0.1" value="1.0">
-        </div>
-        <div class="slider-container">
-            <div class="slider-label">线条亮度:</div>
-            <input type="range" id="opacitySlider" min="0.1" max="1.0" step="0.05" value="0.85">
-        </div>
-    </div>
-    
-    <div id="controls">
-        <button class="control-btn" onclick="pauseResume()">暂停/继续</button>
-        <button class="control-btn" onclick="restartAnimation()">重新开始</button>
-        <button class="control-btn" onclick="toggleAutoRotate()">切换镜头旋转</button>
-    </div>
-    
-    <div id="hint">提示: 可用鼠标拖拽旋转视角，滚轮缩放 | 爱心 → 淡出缩小 → 显示"柏"字 → 缩小 → 爱心...</div>
+    <div id="text">小木白</div>
+    <div class="meteor-container"></div>
 
     <script>
-        // ========== 1. 初始化Three.js场景 ==========
-        const scene = new THREE.Scene();
-        scene.fog = new THREE.Fog(0x000011, 20, 60);
-        const container = document.getElementById('container');
-        const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ 
-            antialias: true, 
-            alpha: true,
-            powerPreference: "high-performance"
-        });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        container.appendChild(renderer.domElement);
-        
-        // 轨道控制器（鼠标交互）
-        const controls = new THREE.OrbitControls(camera, renderer.domElement);
-        camera.position.set(0, 0, 18);
-        controls.enableDamping = true;
-        controls.dampingFactor = 0.05;
-        controls.autoRotate = false;
-        controls.autoRotateSpeed = 0.8;
-        
-        // ========== 2. 核心参数配置 ==========
-        const CONFIG = {
-            totalLines: 220,
-            lineWidth: 2.6,
-            baseSpeed: 0.005,
-            noiseScale: 0.25,
-            heartScale: 2.6,
-            charScale: 2.4,
-            cycleDuration: 360, // 完整循环总帧数
-            currentFrame: 0,
-            isPlaying: true,
-            globalSpeed: 1.0,
-            globalOpacity: 0.85,
-            autoRotate: false
-        };
-        
-        // ========== 3. 动画阶段定义 ==========
-        const PHASES = [
-            { name: "爱心显现", start: 0, end: 90, desc: "线条聚合形成爱心" },
-            { name: "爱心淡出", start: 90, end: 150, desc: "爱心淡出并缩小" },
-            { name: "柏字显现", start: 150, end: 210, desc: "放大显示'柏'字" },
-            { name: "柏字淡出", start: 210, end: 270, desc: "'柏'字淡出缩小" },
-            { name: "爱心重生", start: 270, end: 360, desc: "重新聚合成爱心" }
-        ];
-        
-        // ========== 4. 创建渐变材质 ==========
-        const createGradientMaterial = () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = 512;
-            canvas.height = 1;
-            const ctx = canvas.getContext('2d');
-            const gradient = ctx.createLinearGradient(0, 0, 512, 0);
-            gradient.addColorStop(0.0, '#ffffff');
-            gradient.addColorStop(0.3, '#c2e9ff');
-            gradient.addColorStop(0.6, '#87cefa');
-            gradient.addColorStop(1.0, '#5ca8e0');
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, 512, 1);
-            const texture = new THREE.CanvasTexture(canvas);
-            return new THREE.LineBasicMaterial({ 
-                map: texture,
-                transparent: true,
-                opacity: CONFIG.globalOpacity,
-                linewidth: CONFIG.lineWidth
-            });
-        };
-        const lineMaterial = createGradientMaterial();
-        
-        // ========== 5. 形状函数定义 ==========
-        // 爱心形状函数
-        const getHeartPoint = (t, scale, phase = 0) => {
-            t = t * Math.PI * 2;
-            const heartX = 16 * Math.pow(Math.sin(t), 3);
-            const heartY = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
-            const baseScale = scale * 0.045;
-            // 添加持续的细微抖动，模拟思绪运动
-            const jitter = CONFIG.noiseScale * 0.5;
-            const noiseX = Math.sin(t * 3 + phase * 2) * jitter;
-            const noiseY = Math.cos(t * 2.5 + phase * 1.7) * jitter;
-            const noiseZ = Math.sin(t * 4 + phase * 3) * jitter * 0.3;
-            return new THREE.Vector3(
-                heartX * baseScale + noiseX,
-                -heartY * baseScale + noiseY,
-                noiseZ
-            );
-        };
-        
-        // "柏"字形状函数（简化笔画）
-        const getCharacterPoint = (t, scale, phase = 0) => {
-            // "柏"字的笔画路径参数化
-            const strokes = [
-                // 左侧"木"字旁
-                {t0:0.00, t1:0.08, x:-12, y:-15, dx:1, dy:0},   // 横
-                {t0:0.08, t1:0.20, x:-7, y:-15, dx:0, dy:1},    // 竖
-                {t0:0.20, t1:0.28, x:-12, y:-2, dx:1, dy:0},    // 撇点
-                {t0:0.28, t1:0.36, x:-2, y:-2, dx:1, dy:0},     // 捺点
-                // 右侧"白"字部分
-                {t0:0.36, t1:0.48, x:5, y:-15, dx:0, dy:1},     // 左竖
-                {t0:0.48, t1:0.56, x:5, y:-15, dx:1, dy:0},     // 上横
-                {t0:0.56, t1:0.64, x:17, y:-15, dx:0, dy:1},    // 右竖
-                {t0:0.64, t1:0.72, x:5, y:-3, dx:1, dy:0},      // 下横
-                {t0:0.72, t1:0.82, x:7, y:-8, dx:1, dy:0}       // 中横
-            ];
-            
-            let targetX = 0, targetY = 0;
-            for (const stroke of strokes) {
-                if (t >= stroke.t0 && t <= stroke.t1) {
-                    const strokeT = (t - stroke.t0) / (stroke.t1 - stroke.t0);
-                    targetX = stroke.x + stroke.dx * strokeT * 12;
-                    targetY = stroke.y + stroke.dy * strokeT * 13;
-                    break;
-                }
+        // ========== 1. 核心：中心爱心轮廓粒子（修复版，持续生成不消失） ==========
+        class HeartParticle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.size = Math.random() * 4 + 2; // 粒子大小调大，更明显
+                // 粒子轻微扩散，不跑偏
+                this.speedX = (Math.random() - 0.5) * 0.8;
+                this.speedY = (Math.random() - 0.5) * 0.8;
+                this.alpha = 1;
+                this.decay = Math.random() * 0.01 + 0.003; // 衰减变慢，粒子停留更久
+                this.element = document.createElement('div');
+                this.element.className = 'particle';
+                this.element.style.width = `${this.size}px`;
+                this.element.style.height = `${this.size}px`;
+                this.element.style.left = `${this.x}px`;
+                this.element.style.top = `${this.y}px`;
+                document.body.appendChild(this.element);
             }
-            
-            const baseScale = scale * 0.032;
-          // 同样添加思绪抖动
-            const jitter = CONFIG.noiseScale * 0.6;
-            const noiseX = Math.sin(t * 5 + phase * 1.5) * jitter;
-            const noiseY = Math.cos(t * 4.5 + phase * 2.1) * jitter;
-            const noiseZ = Math.sin(t * 3.7 + phase * 1.9) * jitter * 0.4;
-            
-            return new THREE.Vector3(
-                targetX * baseScale + noiseX,
-                targetY * baseScale + noiseY,
-                noiseZ
-            );
-        };
-        
-        // ========== 6. 线条系统初始化 ==========
-        const lines = [];
-        for (let i = 0; i < CONFIG.totalLines; i++) {
-            const points = [];
-            for (let j = 0; j < 20; j++) {
-                points.push(new THREE.Vector3(0, 0, 0));
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                this.alpha -= this.decay;
+                this.element.style.opacity = this.alpha;
+                this.element.style.left = `${this.x}px`;
+                this.element.style.top = `${this.y}px`;
+                return this.alpha > 0;
             }
-            const geometry = new THREE.BufferGeometry().setFromPoints(points);
-            const line = new THREE.Line(geometry, lineMaterial);
-            
-            line.userData = {
-                seed: Math.random() * 1000,
-                speed: 0.003 + Math.random() * 0.01,
-                noiseScale: 0.1 + Math.random() * 0.3,
-                offset: Math.random() * Math.PI * 2,
-                currentT: i / CONFIG.totalLines
-            };
-            
-            scene.add(line);
-            lines.push({ points, line, geometry });
         }
-        
-        // ========== 7. 动画更新核心逻辑 ==========
-        const updatePhaseDisplay = () => {
-            const phaseDisplay = document.getElementById('phaseDisplay');
-            for (const phase of PHASES) {
-                if (CONFIG.currentFrame >= phase.start && CONFIG.currentFrame < phase.end) {
-                    const progress = (CONFIG.currentFrame - phase.start) / (phase.end - phase.start);
-                    phaseDisplay.innerHTML = `当前阶段: <span class="phase-desc">${phase.name}</span> (${Math.round(progress*100)}%)`;
-                    break;
-                }
+
+        // 爱心数学公式生成（固定中心，持续生成）
+        let particles = [];
+        const centerX = window.innerWidth / 2;
+        const centerY = window.innerHeight / 2;
+        const heartScale = 12; // 爱心整体大小，越大爱心越明显
+
+        function generateHeartParticles() {
+            // 每次生成20个粒子，爱心轮廓更饱满
+            for (let i = 0; i < 20; i++) {
+                let t = Math.random() * Math.PI * 2;
+                let x = 16 * Math.pow(Math.sin(t), 3);
+                let y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
+                // 固定屏幕中心生成爱心
+                let posX = centerX + x * heartScale;
+                let posY = centerY - y * heartScale;
+                particles.push(new HeartParticle(posX, posY));
             }
-        };
-        
-        const updateLines = () => {
-            if (!CONFIG.isPlaying) return;
-            
-            CONFIG.currentFrame += CONFIG.globalSpeed;
-            if (CONFIG.currentFrame >= CONFIG.cycleDuration) {
-                CONFIG.currentFrame = 0;
-            }
-            
-            updatePhaseDisplay();
-            
-            // 计算当前阶段和进度
-            let currentPhase = PHASES[0];
-            let phaseProgress = 0;
-            for (const phase of PHASES) {
-                if (CONFIG.currentFrame >= phase.start && CONFIG.currentFrame < phase.end) {
-                    currentPhase = phase;
-                    phaseProgress = (CONFIG.currentFrame - phase.start) / (phase.end - phase.start);
-                    break;
-                }
-            }
-            
-            // 更新每条线
-            lines.forEach((lineObj, idx) => {
-                const { points, line, geometry } = lineObj;
-                const attrs = line.userData;
-                
-                // 计算当前目标形状和缩放
-                let targetPos = new THREE.Vector3();
-                let scale = 1.0;
-                let opacity = CONFIG.globalOpacity;
-                
-                switch(PHASES.indexOf(currentPhase)) {
-                    case 0: // 爱心显现
-                        targetPos = getHeartPoint(attrs.currentT, CONFIG.heartScale, CONFIG.currentFrame * 0.01);
-                        scale = phaseProgress;
-                        break;
-                    case 1: // 爱心淡出
-                        targetPos = getHeartPoint(attrs.currentT, CONFIG.heartScale, CONFIG.currentFrame * 0.01);
-                        scale = 1.0 - phaseProgress * 0.7;
-                        opacity = CONFIG.globalOpacity * (1.0 - phaseProgress);
-                        break;
-                    case 2: // 柏字显现
-                        targetPos = getCharacterPoint(attrs.currentT, CONFIG.charScale, CONFIG.currentFrame * 0.01);
-                        scale = phaseProgress * 0.5 + 0.5;
-                        opacity = CONFIG.globalOpacity * (0.3 + phaseProgress * 0.7);
-                        break;
-                    case 3: // 柏字淡出
-                        targetPos = getCharacterPoint(attrs.currentT, CONFIG.charScale, CONFIG.currentFrame * 0.01);
-                        scale = 1.0 - phaseProgress * 0.7;
-                        opacity = CONFIG.globalOpacity * (1.0 - phaseProgress);
-                        break;
-                    case 4: // 爱心重生
-                        targetPos = getHeartPoint(attrs.currentT, CONFIG.heartScale, CONFIG.currentFrame * 0.01);
-                        scale = phaseProgress;
-                        opacity = CONFIG.globalOpacity * (0.3 + phaseProgress * 0.7);
-                        break;
-                }
-                
-                // 应用缩放和思绪运动
-                const time = CONFIG.currentFrame * attrs.speed + attrs.offset;
-                const noiseX = Math.sin(time * 2 + attrs.seed) * attrs.noiseScale;
-                const noiseY = Math.cos(time * 1.7 + attrs.seed * 1.3) * attrs.noiseScale;
-                const noiseZ = Math.sin(time * 2.3 + attrs.seed * 0.7) * attrs.noiseScale * 0.5;
-                
-                targetPos.x = targetPos.x * scale + noiseX;
-                targetPos.y = targetPos.y * scale + noiseY;
-                targetPos.z = targetPos.z * scale + noiseZ;
-                
-                // 更新线条拖尾
-                for (let j = points.length - 1; j > 0; j--) {
-                    points[j].copy(points[j-1]);
-                }
-                points[0].copy(targetPos);
-                
-                // 更新几何体和材质
-                geometry.setFromPoints(points);
-                geometry.attributes.position.needsUpdate = true;
-                line.material.opacity = opacity;
-            });
-            
-            // 更新自动旋转
-            if (CONFIG.autoRotate) {
-                camera.position.x = Math.sin(CONFIG.currentFrame * 0.005) * 18;
-                camera.position.z = Math.cos(CONFIG.currentFrame * 0.005) * 18;
-                camera.lookAt(0, 0, 0);
-            }
-        };
-        
-        // ========== 8. 控制函数 ==========
-        window.pauseResume = () => {
-            CONFIG.isPlaying = !CONFIG.isPlaying;
-        };
-        
-        window.restartAnimation = () => {
-            CONFIG.currentFrame = 0;
-            CONFIG.isPlaying = true;
-        };
-        
-        window.toggleAutoRotate = () => {
-            CONFIG.autoRotate = !CONFIG.autoRotate;
-            controls.autoRotate = CONFIG.autoRotate;
-            document.querySelector('.control-btn:nth-child(3)').textContent = 
-                CONFIG.autoRotate ? '停止旋转' : '切换镜头旋转';
-        };
-        
-        // ========== 9. 滑块事件监听 ==========
-        document.getElementById('speedSlider').addEventListener('input', (e) => {
-            CONFIG.globalSpeed = parseFloat(e.target.value);
-            document.querySelector('.slider-container:nth-child(3) .slider-label').innerHTML = 
-                `动画速度: ${CONFIG.globalSpeed.toFixed(1)}x`;
-        });
-        
-        document.getElementById('opacitySlider').addEventListener('input', (e) => {
-            CONFIG.globalOpacity = parseFloat(e.target.value);
-            lineMaterial.opacity = CONFIG.globalOpacity;
-            document.querySelector('.slider-container:nth-child(4) .slider-label').innerHTML = 
-                `线条亮度: ${Math.round(CONFIG.globalOpacity * 100)}%`;
-        });
-        
-        // ========== 10. 渲染循环 ==========
-        const animate = () => {
-            requestAnimationFrame(animate);
-            updateLines();
-            controls.update();
-            renderer.render(scene, camera);
-        };
-        
+            // 过滤消失的粒子，保持性能
+            particles = particles.filter(particle => particle.update());
+        }
+
+        // 持续渲染爱心粒子，60帧/秒
+        function animateHeart() {
+            generateHeartParticles();
+            requestAnimationFrame(animateHeart);
+        }
+        animateHeart();
+
+        // ========== 2. 鼠标触发飘心粒子 ==========
+        document.addEventListener('mousemove', createHeart);
+        document.addEventListener('click', createHeart);
+        function createHeart(e) {
+            const heart = document.createElement('div');
+            heart.className = 'heart';
+            heart.innerText = '💙'; // 蓝色爱心符号
+            const x = e.clientX - 10;
+            const y = e.clientY - 10;
+            heart.style.left = `${x}px`;
+            heart.style.top = `${y}px`;
+            // 随机大小和下落时长
+            const scale = Math.random() * 1 + 0.6;
+            const duration = Math.random() * 4 + 2;
+            heart.style.transform = `scale(${scale})`;
+            heart.style.animation = `heartFall ${duration}s linear forwards`;
+            document.body.appendChild(heart);
+            // 动画结束删除
+            setTimeout(() => heart.remove(), duration * 1000);
+        }
+
+        // ========== 3. 右上→左下流星 ==========
+        const meteorContainer = document.querySelector('.meteor-container');
+        const meteorCount = 12; // 流星数量，避免过多遮挡爱心
+        for (let i = 0; i < meteorCount; i++) {
+            const meteor = document.createElement('div');
+            meteor.className = 'meteor';
+            // 随机流星长度、延迟、速度
+            const len = Math.random() * 100 + 80;
+            const delay = Math.random() * 8;
+            const duration = Math.random() * 3 + 3;
+            meteor.style.width = `${len}px`;
+            meteor.style.animationDelay = `${delay}s`;
+            meteor.style.animationDuration = `${duration}s`;
+            meteorContainer.appendChild(meteor);
+        }
+
+        // ========== 4. 雪花飘屏 ==========
+        function createSnow() {
+            const snow = document.createElement('div');
+            snow.className = 'snow';
+            snow.innerText = '❄️';
+            // 随机雪花位置和大小
+            const randomX = Math.random() * window.innerWidth;
+            const randomSize = Math.random() * 1 + 0.5;
+            snow.style.left = `${randomX}px`;
+            snow.style.top = '-20px';
+            snow.style.fontSize = `${12 * randomSize}px`;
+            // 随机下落时长
+            const duration = Math.random() * 6 + 4;
+            snow.style.animation = `snowFall ${duration}s linear forwards`;
+            document.body.appendChild(snow);
+            // 动画结束删除
+            setTimeout(() => snow.remove(), duration * 1000);
+        }
+        // 雪花密度（200=适中，不遮挡爱心）
+        setInterval(createSnow, 200);
+
+        // ========== 5. 窗口缩放适配（爱心始终居中） ==========
         window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
+            // 窗口变化时更新爱心中心
+            centerX = window.innerWidth / 2;
+            centerY = window.innerHeight / 2;
         });
-        
-        // ========== 启动 ==========
-        animate();
-        updatePhaseDisplay();
     </script>
 </body>
 </html>
